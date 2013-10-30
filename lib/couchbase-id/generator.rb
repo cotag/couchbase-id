@@ -63,16 +63,18 @@ module CouchbaseId
                 # One would hope this code only ever runs under high load during an overflow event
                 #
                 while self.class.bucket.get(self.id, :quiet => true).present?
-                    if @@__overflow__ == overflow
-                        @@__overflow__ = nil
-                    end
-
                     # Set in-case we are here due to a crash (concurrency is not an issue)
                     # Note we are not incrementing the @__overflow__ variable
                     self.class.bucket.set("#{name}:#{CLUSTER_ID}:overflow", overflow + 1)
                     count = self.class.bucket.incr("#{name}:#{CLUSTER_ID}:count")               # Increment just in case (attempt to avoid infinite loops)
                     
-                    self.id = @@__class_id_generator__.call(name, overflow + 1, count)         # Generate the new id
+                    # Reset the overflow
+                    if @@__overflow__ == overflow
+                        @@__overflow__ = nil
+                    end
+
+                    # Generate the new id
+                    self.id = @@__class_id_generator__.call(name, overflow + 1, count)
                 end
             end
         end
