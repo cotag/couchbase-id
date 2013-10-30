@@ -20,7 +20,7 @@ Gem::Specification.new do |gem|
     gem.add_development_dependency 'rake', '>= 10.1'
     gem.add_development_dependency 'yard'
 
-    s.files = Dir["{lib}/**/*"] + %w(Rakefile couchbase-id.gemspec README.md LICENSE)
-    s.test_files = Dir["spec/**/*"]
-    s.extra_rdoc_files = ["README.md"]
+    gem.files = Dir["{lib}/**/*"] + %w(Rakefile couchbase-id.gemspec README.md LICENSE)
+    gem.test_files = Dir["spec/**/*"]
+    gem.extra_rdoc_files = ["README.md"]
 end
