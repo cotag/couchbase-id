@@ -89,7 +89,7 @@ module CouchbaseId
 
                 def self.default_class_id_generator(overflow, count)
                     id = Radix.convert([overflow, CLUSTER_ID].join.to_i, B10, B65) + Radix.convert(count, B10, B65)
-                    "#{@@__class_name__}-#{id}"
+                    "#{@__class_name__}-#{id}"
                 end
 
                 #
@@ -97,14 +97,14 @@ module CouchbaseId
                 #
                 def self.set_class_id_generator(callback = nil, &block)
                     callback ||= block
-                    @@__class_id_generator__ = callback
+                    @__class_id_generator__ = callback
                 end
 
                 #
                 # Configure class level variables
-                @@__overflow__ = nil
-                @@__class_id_generator__ = method(:default_class_id_generator)
-                @@__class_name__ = self.name.underscore.gsub(/\/|_/, '-')      # The included classes name
+                @__overflow__ = nil
+                @__class_id_generator__ = method(:default_class_id_generator)
+                @__class_name__ = self.name.underscore.gsub(/\/|_/, '-')      # The included classes name
             end
         end
     end # END:: Generator
