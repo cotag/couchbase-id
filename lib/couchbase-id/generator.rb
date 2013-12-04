@@ -38,18 +38,18 @@ module CouchbaseId
                 #
                 # Generate the id (incrementing values as required)
                 #
-                overflow = @@__overflow__ ||= self.class.bucket.get("#{@@__class_name__}:#{CLUSTER_ID}:overflow", :quiet => true) # Don't error if not there
-                count = self.class.bucket.incr("#{@@__class_name__}:#{CLUSTER_ID}:count", :create => true)     # This models current id count
+                overflow = self.class.__overflow__ ||= self.class.bucket.get("#{self.class.__class_name__}:#{CLUSTER_ID}:overflow", :quiet => true) # Don't error if not there
+                count = self.class.bucket.incr("#{self.class.__class_name__}:#{CLUSTER_ID}:count", :create => true)     # This models current id count
                 if count == 0 || overflow.nil?
                     overflow ||= 0
                     overflow += 1
                     # We shouldn't need to worry about concurrency here due to the size of count
                     # Would require ~18446744073709551615 concurrent writes
-                    self.class.bucket.set("#{@@__class_name__}:#{CLUSTER_ID}:overflow", overflow)
-                    @@__overflow__ = overflow
+                    self.class.bucket.set("#{self.class.__class_name__}:#{CLUSTER_ID}:overflow", overflow)
+                    self.class.__overflow__ = overflow
                 end
                 
-                self.id = @@__class_id_generator__.call(overflow, count)
+                self.id = self.class.__class_id_generator__.call(overflow, count)
                 
                 
                 #
@@ -63,21 +63,28 @@ module CouchbaseId
                 while self.class.bucket.get(self.id, :quiet => true).present?
                     # Set in-case we are here due to a crash (concurrency is not an issue)
                     # Note we are not incrementing the @__overflow__ variable
-                    self.class.bucket.set("#{@@__class_name__}:#{CLUSTER_ID}:overflow", overflow + 1)
-                    count = self.class.bucket.incr("#{@@__class_name__}:#{CLUSTER_ID}:count")               # Increment just in case (attempt to avoid infinite loops)
+                    self.class.bucket.set("#{self.class.__class_name__}:#{CLUSTER_ID}:overflow", overflow + 1)
+                    count = self.class.bucket.incr("#{self.class.__class_name__}:#{CLUSTER_ID}:count")               # Increment just in case (attempt to avoid infinite loops)
                     
                     # Reset the overflow
-                    if @@__overflow__ == overflow
-                        @@__overflow__ = nil
+                    if self.class.__overflow__ == overflow
+                        self.class.__overflow__ = nil
                     end
 
                     # Generate the new id
-                    self.id = @@__class_id_generator__.call(overflow + 1, count)
+                    self.id = self.class.__class_id_generator__.call(overflow + 1, count)
                 end
             end
         end
 
         def self.included(base)
+            class << base
+                attr_accessor :__overflow__
+                attr_accessor :__class_id_generator__
+                attr_accessor :__class_name__
+            end
+
+
             base.class_eval do
                 #
                 # Best case we have 18446744073709551615 * 18446744073709551615 model entries for each database cluster
@@ -89,7 +96,7 @@ module CouchbaseId
 
                 def self.default_class_id_generator(overflow, count)
                     id = Radix.convert([overflow, CLUSTER_ID].join.to_i, B10, B65) + Radix.convert(count, B10, B65)
-                    "#{@__class_name__}-#{id}"
+                    "#{self.__class_name__}-#{id}"
                 end
 
                 #
@@ -97,14 +104,14 @@ module CouchbaseId
                 #
                 def self.set_class_id_generator(callback = nil, &block)
                     callback ||= block
-                    @__class_id_generator__ = callback
+                    self.__class_id_generator__ = callback
                 end
 
                 #
                 # Configure class level variables
-                @__overflow__ = nil
-                @__class_id_generator__ = method(:default_class_id_generator)
-                @__class_name__ = self.name.underscore.gsub(/\/|_/, '-')      # The included classes name
+                base.__overflow__ = nil
+                base.__class_id_generator__ = method(:default_class_id_generator)
+                base.__class_name__ = self.name.underscore.gsub(/\/|_/, '-')      # The included classes name
             end
         end
     end # END:: Generator
