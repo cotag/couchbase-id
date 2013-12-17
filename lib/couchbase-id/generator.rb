@@ -38,14 +38,14 @@ module CouchbaseId
                 #
                 # Generate the id (incrementing values as required)
                 #
-                overflow = self.class.__overflow__ ||= self.class.bucket.get("#{self.class.__class_name__}:#{CLUSTER_ID}:overflow", :quiet => true) # Don't error if not there
-                count = self.class.bucket.incr("#{self.class.__class_name__}:#{CLUSTER_ID}:count", :create => true)     # This models current id count
+                overflow = self.class.__overflow__ ||= self.class.bucket.get("#{self.class.design_document}:#{CLUSTER_ID}:overflow", :quiet => true) # Don't error if not there
+                count = self.class.bucket.incr("#{self.class.design_document}:#{CLUSTER_ID}:count", :create => true)     # This models current id count
                 if count == 0 || overflow.nil?
                     overflow ||= 0
                     overflow += 1
                     # We shouldn't need to worry about concurrency here due to the size of count
                     # Would require ~18446744073709551615 concurrent writes
-                    self.class.bucket.set("#{self.class.__class_name__}:#{CLUSTER_ID}:overflow", overflow)
+                    self.class.bucket.set("#{self.class.design_document}:#{CLUSTER_ID}:overflow", overflow)
                     self.class.__overflow__ = overflow
                 end
                 
@@ -63,8 +63,8 @@ module CouchbaseId
                 while self.class.bucket.get(self.id, :quiet => true).present?
                     # Set in-case we are here due to a crash (concurrency is not an issue)
                     # Note we are not incrementing the @__overflow__ variable
-                    self.class.bucket.set("#{self.class.__class_name__}:#{CLUSTER_ID}:overflow", overflow + 1)
-                    count = self.class.bucket.incr("#{self.class.__class_name__}:#{CLUSTER_ID}:count")               # Increment just in case (attempt to avoid infinite loops)
+                    self.class.bucket.set("#{self.class.design_document}:#{CLUSTER_ID}:overflow", overflow + 1)
+                    count = self.class.bucket.incr("#{self.class.design_document}:#{CLUSTER_ID}:count")               # Increment just in case (attempt to avoid infinite loops)
                     
                     # Reset the overflow
                     if self.class.__overflow__ == overflow
@@ -81,7 +81,6 @@ module CouchbaseId
             class << base
                 attr_accessor :__overflow__
                 attr_accessor :__class_id_generator__
-                attr_accessor :__class_name__
             end
 
 
@@ -96,7 +95,7 @@ module CouchbaseId
 
                 def self.default_class_id_generator(overflow, count)
                     id = Radix.convert([overflow, CLUSTER_ID].join.to_i, B10, B65) + Radix.convert(count, B10, B65)
-                    "#{self.__class_name__}-#{id}"
+                    "#{self.design_document}-#{id}"
                 end
 
                 #
@@ -111,7 +110,6 @@ module CouchbaseId
                 # Configure class level variables
                 base.__overflow__ = nil
                 base.__class_id_generator__ = method(:default_class_id_generator)
-                base.__class_name__ = self.name.underscore.gsub(/\/|_/, '-')      # The included classes name
             end
         end
     end # END:: Generator
