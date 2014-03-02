@@ -13,11 +13,6 @@ Gem::Specification.new do |gem|
     gem.required_ruby_version = '>= 1.9.2'
     gem.require_paths = ['lib']
 
-    if RUBY_PLATFORM == 'java'
-        gem.add_runtime_dependency 'couchbase-jruby-model' # couchbase active model orm
-    else
-        gem.add_runtime_dependency 'couchbase-model' # couchbase active model orm
-    end
     gem.add_runtime_dependency     'radix' # This converts numbers to the unicode representation
 
     gem.add_development_dependency 'rspec', '>= 2.14'
