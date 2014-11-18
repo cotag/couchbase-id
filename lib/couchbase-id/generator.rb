@@ -94,8 +94,8 @@ module CouchbaseId
                 before_create :generate_id
 
                 def self.default_class_id_generator(overflow, count)
-                    id = Radix.convert([overflow, CLUSTER_ID].join.to_i, B10, B65) + Radix.convert(count, B10, B65)
-                    "#{self.design_document}-#{id}"
+                    id = Radix.convert(overflow, B10, B65) + Radix.convert(count, B10, B65)
+                    "#{self.design_document}-#{Radix.convert(CLUSTER_ID, B10, B65)}-#{id}"
                 end
 
                 #
