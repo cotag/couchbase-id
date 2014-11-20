@@ -95,7 +95,7 @@ module CouchbaseId
 
                 def self.default_class_id_generator(overflow, count)
                     id = Radix.convert(overflow, B10, B65) + Radix.convert(count, B10, B65)
-                    "#{self.design_document}-#{Radix.convert(CLUSTER_ID, B10, B65)}-#{id}"
+                    "#{self.design_document}_#{Radix.convert(CLUSTER_ID, B10, B65)}-#{id}"
                 end
 
                 #
