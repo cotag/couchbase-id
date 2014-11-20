@@ -26,11 +26,11 @@ module CouchbaseId
         
 
         # Basic compression using UTF (more efficient for ID's stored as strings)
-        B65 ||= Radix::Base.new(Radix::BASE::B62 + ['-', '_', '~'])
+        B64 ||= Radix::Base.new(Radix::BASE::B62 + ['_', '~'])
         B10 ||= Radix::Base.new(10)
 
         # The cluster id this node belongs to (avoids XDCR clashes)
-        CLUSTER_ID ||= Radix.convert((ENV['COUCHBASE_CLUSTER'] || 1), B10, B65)     # Cluster ID number
+        CLUSTER_ID ||= Radix.convert((ENV['COUCHBASE_CLUSTER'] || 1), B10, B64)     # Cluster ID number
 
         # instance method
         def generate_id
@@ -94,7 +94,7 @@ module CouchbaseId
                 before_create :generate_id
 
                 def self.default_class_id_generator(overflow, count)
-                    id = Radix.convert(overflow, B10, B65) + Radix.convert(count, B10, B65)
+                    id = Radix.convert(overflow, B10, B64) + Radix.convert(count, B10, B64)
                     "#{self.design_document}_#{CLUSTER_ID}-#{id}"
                 end
 
